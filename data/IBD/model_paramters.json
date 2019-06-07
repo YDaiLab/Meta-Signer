@@ -1,0 +1,25 @@
+{
+    "MLPNN": {
+        "Dropout_Rate": 0.5,
+        "L2_Lambda": 0.01,
+        "Max_Epoch": 100,
+        "Num_Layers": 2,
+        "Num_Nodes": 32
+   },
+    "MLPNN_TREE": {
+        "Dropout_Rate": 0.5,
+        "L2_Lambda": 0.01,
+        "Max_Epoch": 100,
+        "Num_Layers": 2,
+        "Num_Nodes": 32
+   },
+    "PopPhy": {
+        "Dropout_Rate": 0.5,
+        "Kernel_Height": 5,
+        "Kernel_Width": 5,
+        "L2_Lambda": 0.01,
+        "Max_Epoch": 100,
+        "Num_Kernel": 32,
+        "Num_Nodes": 32
+    }
+}

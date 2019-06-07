@@ -1,0 +1,24 @@
+{
+    "CNN": {
+        "Dropout_Rate": 0.25,
+        "Kernel_Size": 7,
+        "L2_Lambda": 0.001,
+        "Max_Epoch": 30,
+        "Num_Kernel": 64,
+        "Num_Nodes": 32
+   },
+    "MLPNN": {
+        "Dropout_Rate": 0.25,
+        "L2_Lambda": 0.01,
+        "Max_Epoch": 80,
+        "Num_Layers": 2,
+        "Num_Nodes": 64
+   },
+    "MLPNN_TREE": {
+        "Dropout_Rate": 0.5,
+        "L2_Lambda": 0.01,
+        "Max_Epoch": 80,
+        "Num_Layers": 1,
+        "Num_Nodes": 64
+    }
+}
