@@ -22,6 +22,8 @@ source activate meta-signer
 
 Meta-Signer offers a flexible framework which can be customized in the configuration file.
 
+**If you want to run Meta-Signer without deep learning models and without Tensorflow, make sure to set the 'Train' parameter to False in config.py.**
+
 ### Run the Meta-Signer pipeline:
 
 ```bash
