@@ -1,4 +1,4 @@
-name: meta-signer2
+name: meta-signer
 channels:
   - defaults
 dependencies:
