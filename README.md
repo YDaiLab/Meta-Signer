@@ -12,6 +12,11 @@ To fully utilize GPUs for faster training of the deep learning models, users wil
 
 Other dependencies should be downloaded upon importing the provided environment.
 
+### Clone Repository
+```bash
+git clone https://github.com/YDaiLab/Meta-Signer.git
+cd Meta-Signer
+```
 ### Import Conda Environment
 
 ```bash
@@ -27,6 +32,7 @@ Meta-Signer offers a flexible framework which can be customized in the configura
 ### Run the Meta-Signer pipeline:
 
 ```bash
+cd src
 python meta-signer.py
 ``` 
 
