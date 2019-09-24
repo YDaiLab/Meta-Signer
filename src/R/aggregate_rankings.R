@@ -40,20 +40,17 @@ if (method == "tree"){
 	svm_scores <- as.vector(metric_scores["SVM_TREE",])
 	lasso_scores <- as.vector(metric_scores["LASSO_TREE",])
 	mlpnn_scores <- as.vector(metric_scores["MLPNN_TREE",])
-	cnn_scores <- as.vector(metric_scores["CNN",])
+	cnn_scores <- as.vector(metric_scores["PopPhy",])
 	w <- c(rf_scores, svm_scores, lasso_scores, mlpnn_scores, cnn_scores)
 		
 }
 w <- as.numeric(w)
 w <- w[!is.na(w)]
 w[w<0] <- 0
-print(w)
 
 
 
 mat <- read.table(input, sep=",", header=T, colClasses="character", row.names=1)
-print(dim(t(as.matrix(mat))))
-print(nrow(t(as.matrix(mat))))
 
 if ((nrow(t(as.matrix(mat)))) == 1){
 	ranking <- t(as.matrix(mat))[1:k]

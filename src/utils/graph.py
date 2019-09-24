@@ -112,9 +112,9 @@ class Graph:
 	def get_node_count(self):
 		return self.node_count
 
-	def get_dictionary(self):
+	def get_all_nodes(self):
 		list = []
-		for l in range(0, self.layers):
+		for l in range(1, self.layers+1):
 			nodes = self.get_nodes(l)
 			for n in nodes:
 				list.append(n.get_id())
@@ -206,6 +206,14 @@ class Graph:
 				level = 'genus'
 			if lab.iloc[i][level] == "NA":
 				level = 'family'
+			if lab.iloc[i][level] == "NA":
+				level = 'order'
+			if lab.iloc[i][level] == "NA":
+				level = 'class'
+			if lab.iloc[i][level] == "NA":
+				level = 'phylum'
+			if lab.iloc[i][level] == "NA":
+				level = 'kingdom'
 			node = self.get_node_by_name(lab.iloc[i][level])
 			if node == None:
 				node = self.get_node_by_name(lab.iloc[i][level]+"_"+level)
@@ -373,7 +381,6 @@ class Graph:
 					self.delete_node(l, n)
 					deleted += 1
 			
-		
 		features = features_df
 		for i in range(0, len(list(features.index))):
 			found = False

@@ -18,11 +18,12 @@ import models.svm as svm
 import models.lasso as lasso
 
 if config.get('PopPhy', 'Train') == "True":
-	import models.PopPhy as PopPhy
-
+	from models.PopPhy import PopPhyCNN
+	from utils.tune import tune_PopPhy
 
 if config.get('MLPNN', 'Train') == "True":
-	import models.mlpnn as mlpnn
+	from models.mlpnn import MLPNN
+	from utils.tune import tune_mlpnn
 
 from sklearn.model_selection import StratifiedKFold, LeaveOneOut
 from sklearn.metrics import roc_curve
@@ -82,6 +83,9 @@ if __name__ == "__main__":
 		np.random.seed(seed)
 		np.random.shuffle(labels)
 
+		n_values = np.max(labels) + 1
+		labels_oh = np.eye(n_values)[labels]
+
 		print("There are %d classes...%s" % (num_class, ", ".join(label_set)))
 		#########################################################################
 		# Determine which models are being trained
@@ -109,7 +113,7 @@ if __name__ == "__main__":
 			to_train.append("MLPNN_TREE")
 
 		if train_popphy == "True":
-			to_train.append("CNN")
+			to_train.append("PopPhy")
 		#########################################################################
 		# Set up DataFrames to store results
 		#########################################################################
@@ -232,6 +236,7 @@ if __name__ == "__main__":
 				#################################################################
 				train_x, test_x = my_benchmark[train_index,:], my_benchmark[test_index,:]
 				train_y, test_y = labels[train_index], labels[test_index]
+				train_y_oh, test_y_oh = labels_oh[train_index,:], labels_oh[test_index,:]
 				train_popphy_x, test_popphy_x = my_maps[train_index,:,:], my_maps[test_index,:,:]
 				train_tree_vec, test_tree_vec = my_benchmark_tree[train_index,:], my_benchmark_tree[test_index,:]
 
@@ -267,15 +272,10 @@ if __name__ == "__main__":
 					train_tree_vec = np.clip(scaler.transform(train_tree_vec), -3, 3)
 					test_tree_vec = np.clip(scaler.transform(test_tree_vec), -3, 3)
 
-				if normalization == "Standard":
-					scaler = StandardScaler().fit(train_popphy_x.reshape(num_train_samples, -1))
-					train_popphy_x = np.clip(scaler.transform(train_popphy_x.reshape(num_train_samples, -1)).reshape(num_train_samples, tree_row, tree_col), -3, 3)
-					test_popphy_x = np.clip(scaler.transform(test_popphy_x.reshape(num_test_samples, -1)).reshape(num_test_samples, tree_row, tree_col), -3, 3)
 
-				if normalization == "MinMax":
-					scaler = MinMaxScaler().fit(train_popphy_x.reshape(num_train_samples, -1))
-					train_popphy_x = np.clip(scaler.transform(train_popphy_x.reshape(num_train_samples, -1)).reshape(num_train_samples, tree_row, tree_col), 0, 1)
-					test_popphy_x = np.clip(scaler.transform(test_popphy_x.reshape(num_test_samples, -1)).reshape(num_test_samples, tree_row, tree_col), 0, 1)
+				scaler = MinMaxScaler().fit(train_popphy_x.reshape(num_train_samples, -1))
+				train_popphy_x = np.clip(scaler.transform(train_popphy_x.reshape(num_train_samples, -1)).reshape(num_train_samples, tree_row, tree_col), 0, 1)
+				test_popphy_x = np.clip(scaler.transform(test_popphy_x.reshape(num_test_samples, -1)).reshape(num_test_samples, tree_row, tree_col), 0, 1)
 
 				train_x = np.array(train_x)
 				train_tree_vec = np.array(train_tree_vec)
@@ -289,8 +289,14 @@ if __name__ == "__main__":
 				train_tree = [train_tree_vec, train_y]
 				test_tree = [test_tree_vec, test_y]
 
-				popphy_train = [train_popphy_x, train_y]
-				popphy_test = [test_popphy_x, test_y]
+				train_mlpnn_raw = [train_x, train_y_oh]
+				test_mlpnn_raw = [test_x, test_y_oh]
+
+				train_mlpnn_tree = [train_tree_vec, train_y_oh]
+				test_mlpnn_tree = [test_tree_vec, test_y_oh]
+
+				popphy_train = [train_popphy_x, train_y_oh]
+				popphy_test = [test_popphy_x, test_y_oh]
 
 				#################################################################
 				# Try to load model parameters if first fold
@@ -314,38 +320,40 @@ if __name__ == "__main__":
 					if "MLPNN" not in param_dict and "MLPNN" in to_train:
 						print("MLPNN parameters not found...Tuning MLPNN paramters...")
 						param_dict["MLPNN"] = {}
-						mlpnn_layers, mlpnn_nodes, mlpnn_lamb, mlpnn_drop, mlpnn_epoch = mlpnn.tune(train, config)
+						mlpnn_layers, mlpnn_nodes, mlpnn_lamb, mlpnn_drop = tune_mlpnn(train_mlpnn_raw, test_mlpnn_raw, config)
 						param_dict["MLPNN"]["Num_Layers"] = mlpnn_layers
 						param_dict["MLPNN"]["Num_Nodes"] = mlpnn_nodes
 						param_dict["MLPNN"]["L2_Lambda"] = mlpnn_lamb
 						param_dict["MLPNN"]["Dropout_Rate"] = mlpnn_drop
-						param_dict["MLPNN"]["Max_Epoch"] = mlpnn_epoch
 
 					if "MLPNN_TREE" not in param_dict and "MLPNN_TREE" in to_train:
 						print("MLPNN (tree) parameters not found...Tuning MLPNN (tree) paramters...")
 						param_dict["MLPNN_TREE"] = {}
-						mlpnn_tree_layers, mlpnn_tree_nodes, mlpnn_tree_lamb, mlpnn_tree_drop, mlpnn_tree_epoch = mlpnn.tune(train_tree, config)
+						mlpnn_tree_layers, mlpnn_tree_nodes, mlpnn_tree_lamb, mlpnn_tree_drop = tune_mlpnn(train_mlpnn_tree, test_mlpnn_tree, config)
 						param_dict["MLPNN_TREE"]["Num_Layers"] = mlpnn_tree_layers
 						param_dict["MLPNN_TREE"]["Num_Nodes"] = mlpnn_tree_nodes
 						param_dict["MLPNN_TREE"]["L2_Lambda"] = mlpnn_tree_lamb
 						param_dict["MLPNN_TREE"]["Dropout_Rate"] = mlpnn_tree_drop
-						param_dict["MLPNN_TREE"]["Max_Epoch"] = mlpnn_epoch
 
-					if "CNN" not in param_dict and "CNN" in to_train:
-						print("CNN parameters not found...Tuning PopPhy parameters...")
-						param_dict["CNN"] = {}
-						best_num_kernel, best_kernel_size, best_num_nodes, best_lambda, best_drop, cnn_epoch = PopPhy.tune(popphy_train, config, g)
-						param_dict["CNN"]["Num_Kernel"] = best_num_kernel
-						param_dict["CNN"]["Kernel_Size"] = best_kernel_size
-						param_dict["CNN"]["Num_Nodes"] = best_num_nodes
-						param_dict["CNN"]["L2_Lambda"] = best_lambda
-						param_dict["CNN"]["Dropout_Rate"] = best_drop
-						param_dict["CNN"]["Max_Epoch"] = cnn_epoch
+					if "PopPhy" not in param_dict and "PopPhy" in to_train:
+						print("PopPhy parameters not found...Tuning PopPhy parameters...")
+						param_dict["PopPhy"] = {}
+						best_num_kernel, best_kernel_h, best_kernel_w, best_cnn_layers, best_fc_layers, best_fc_nodes, best_lambda, best_drop = tune_PopPhy(popphy_train, popphy_test, config)
+						param_dict["PopPhy"]["Num_Kernel"] = best_num_kernel
+						param_dict["PopPhy"]["Kernel_Height"] = best_kernel_h
+						param_dict["PopPhy"]["Kernel_Width"] = best_kernel_w
+						param_dict["PopPhy"]["Layers"] = best_cnn_layers	
+						param_dict["PopPhy"]["FC_Layers"] = best_fc_layers
+						param_dict["PopPhy"]["Num_Nodes"] = best_fc_nodes
+						param_dict["PopPhy"]["L2_Lambda"] = best_lambda
+						param_dict["PopPhy"]["Dropout_Rate"] = best_drop
 					#############################################################
 					# Save parameters
 					#############################################################
 
 					save_params(param_dict, path)
+
+
 
 				print("\n# %s values for run %d fold %d:" % (metric, run, fold))
 				print("# Model\t\t\t%s\t\tMean" % (str(metric)))
@@ -496,9 +504,11 @@ if __name__ == "__main__":
 				#################################################################
 				# Triain MLPNN model using raw and tree features
 				#################################################################
-
 				if train_mlpnn == "True":
-					stats, tpr, fpr, thresh, scores, probs = mlpnn.train(train, test, config, param_dict["MLPNN"], metric, label_set)
+					mlpnn_model = MLPNN(len(features), num_class, config, param_dict["MLPNN"])
+					mlpnn_model.train(train_mlpnn_raw)
+					stats, tpr, fpr, thresh, probs = mlpnn_model.test(test_mlpnn_raw)
+					scores = mlpnn_model.get_scores()
 
 					if num_class == 2:
 						auc_df.loc["MLPNN"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["AUC"]
@@ -522,8 +532,10 @@ if __name__ == "__main__":
 						mlpnn_scores[lab]["Run_" + str(run) + "_CV_" + str(fold)] = score_list
 						mlpnn_rankings[lab]["Run_" + str(run) + "_CV_" + str(fold)] = np.flip(np.argsort(score_list))
 
-
-					stats, tpr, fpr, thresh, scores, probs = mlpnn.train(train_tree, test_tree, config, param_dict["MLPNN_TREE"], metric, label_set)
+					mlpnn_tree_model = MLPNN(len(tree_features), num_class, config, param_dict["MLPNN_TREE"])
+					mlpnn_tree_model.train(train_mlpnn_tree)
+					stats, tpr, fpr, thresh, probs = mlpnn_tree_model.test(test_mlpnn_tree)
+					scores = mlpnn_tree_model.get_scores()
 
 					if num_class == 2:
 						auc_df.loc["MLPNN_TREE"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["AUC"]
@@ -554,23 +566,26 @@ if __name__ == "__main__":
 				#################################################################
 
 				if train_popphy == "True":
-					stats, tpr, fpr, thresh, scores, probs = PopPhy.train(popphy_train, popphy_test, config, g, param_dict["CNN"], metric, label_set, tree_features)
+					popphy_model = PopPhyCNN((popphy_train[0].shape[1],popphy_train[0].shape[2]), num_class, config, param_dict["PopPhy"])
+					popphy_model.train(popphy_train)
+					stats, tpr, fpr, thresh, probs = popphy_model.test(popphy_test)
+					scores = popphy_model.get_feature_scores(popphy_train, g, label_set, tree_features, config)
 
 					if num_class == 2:
-						auc_df.loc["CNN"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["AUC"]
-						tpr_dict["CNN"].append(tpr)
-						fpr_dict["CNN"].append(fpr)
-						thresh_dict["CNN"].append(thresh)
-					mcc_df.loc["CNN"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["MCC"]
-					precision_df.loc["CNN"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["Precision"]
-					recall_df.loc["CNN"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["Recall"]
-					f1_df.loc["CNN"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["F1"]
+						auc_df.loc["PopPhy"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["AUC"]
+						tpr_dict["PopPhy"].append(tpr)
+						fpr_dict["PopPhy"].append(fpr)
+						thresh_dict["PopPhy"].append(thresh)
+					mcc_df.loc["PopPhy"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["MCC"]
+					precision_df.loc["PopPhy"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["Precision"]
+					recall_df.loc["PopPhy"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["Recall"]
+					f1_df.loc["PopPhy"]["Run_" + str(run) + "_CV_" + str(fold)]=stats["F1"]
 
 					sys.stdout.write("")
 					if metric == "AUC":
-						print("# CNN:\t\t\t%f\t%f" % (stats["AUC"], auc_df.loc["CNN"].mean(axis=0)))
+						print("# CNN:\t\t\t%f\t%f" % (stats["AUC"], auc_df.loc["PopPhy"].mean(axis=0)))
 					if metric == "MCC":
-						print("# CNN:\t\t\t%f\t%f" % (stats["MCC"], mcc_df.loc["CNN"].mean(axis=0)))
+						print("# CNN:\t\t\t%f\t%f" % (stats["MCC"], mcc_df.loc["PopPhy"].mean(axis=0)))
 
 					for l in range(len(label_set)):
 						score_list = scores[:,l]
@@ -702,7 +717,7 @@ if __name__ == "__main__":
 				mlpnn_tree_ranking_df["MLPNN_" + col] = score_list.max(axis=1).rank(ascending=False).sort_values(ascending=True).index.values
 
 		col_num = 0
-		if "CNN" in to_train:
+		if "PopPhy" in to_train:
 			for col in cnn_scores[label_set[0]].columns:
 				for l in range(len(label_set)):
 					if l == 0:
@@ -733,27 +748,27 @@ if __name__ == "__main__":
 			mlpnn_ranking_df.to_csv(result_path + "/feature_evaluation/mlpnn_raw_rank_table.csv")
 			mlpnn_tree_ranking_df.to_csv(result_path + "/feature_evaluation/mlpnn_tree_rank_table.csv")
 
-		if "CNN" in to_train:
+		if "PopPhy" in to_train:
 			cnn_tree_ranking_df.to_csv(result_path + "/feature_evaluation/cnn_tree_rank_table.csv")
 
 		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train:
 			ranking_df.to_csv(result_path + "/feature_evaluation/ensemble_raw_rank_table.csv")
 
-		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train or "CNN" in to_train:
+		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train or "PopPhy" in to_train:
 			tree_ranking_df.to_csv(result_path + "/feature_evaluation/ensemble_tree_rank_table.csv")
 
 		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train:
 			cmd_raw = ['Rscript', 'R/aggregate_rankings.R'] + [result_path, top_k, "raw", "ensemble", metric]
 			run_raw = subprocess.check_output(cmd_raw, universal_newlines=True)
 
-		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train or "CNN" in to_train:
+		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train or "PopPhy" in to_train:
 			cmd_tree = ['Rscript', 'R/aggregate_rankings.R'] + [result_path, top_k, "tree", "ensemble", metric]
 			run_tree = subprocess.check_output(cmd_tree, universal_newlines=True)
 
 		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train:
 			rank_list = np.array(pd.read_csv(result_path + "/feature_evaluation/ensemble_raw_rank_table_aggregated.csv", index_col=None, header=None).values).reshape(-1)
 
-		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train or "CNN" in to_train:
+		if ("LASSO" in to_train and num_class == 2) or "MLPNN" in to_train or "RF" in to_train or "PopPhy" in to_train:
 			tree_rank_list = np.array(pd.read_csv(result_path + "/feature_evaluation/ensemble_tree_rank_table_aggregated.csv", index_col=None, header=None).values).reshape(-1)
 
 		for feat in tree_rank_list:
@@ -869,7 +884,7 @@ if __name__ == "__main__":
 						if np.median(mlpnn_tree_scores[lab].loc[feat].values) > max_val:
 								enriched_lab = lab
 			'''
-			if "CNN" in to_train:
+			if "PopPhy" in to_train:
 				if num_class == 2:
 					if np.median(cnn_scores[label_set[0]].loc[feat].values) > np.median(cnn_scores[label_set[1]].loc[feat].values):
 						cl_vote = cl_vote - 1
@@ -893,7 +908,7 @@ if __name__ == "__main__":
 			else:
 				if "MLPNN" in to_train:
 					tree_rank_dict[feat_trim]["Enriched"] = enriched_lab
-				elif "CNN" in to_train:
+				elif "PopPhy" in to_train:
 					tree_rank_dict[feat_trim]["Enriched"] = cnn_enriched_lab
 		generate_html(dataset, result_path, config, to_train, time_stamp, results_df, label_set, rank_list, tree_ranking_set, rank_dict, tree_rank_dict)
 

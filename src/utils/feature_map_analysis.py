@@ -47,12 +47,13 @@ def generate_maps(i, j, theta, lab, max_list, fm_cols, w, ref, data, num_samp):
 	return [dictionary]
 
 
-def get_feature_map_rankings_cnn(x, y, pred, fm, w, b, g, label_set, features):
+def get_feature_map_rankings(x, y, pred, fm, w, b, g, label_set, features, config):
+
 	fm = np.array(fm)
 	w = np.array(w)
 	x = np.array(x)
 	y = np.array(y)
-	#fm = np.squeeze(fm)
+	fm = np.squeeze(fm)
 	w = np.squeeze(w)
 	x = np.squeeze(x)
 
@@ -63,7 +64,7 @@ def get_feature_map_rankings_cnn(x, y, pred, fm, w, b, g, label_set, features):
 
 	rankings = {}
 	scores = {}
-	node_names = g.get_dictionary()
+	node_names = g.get_all_nodes()
 
 	labels = label_set
 	otus = features
@@ -91,10 +92,10 @@ def get_feature_map_rankings_cnn(x, y, pred, fm, w, b, g, label_set, features):
 		fm_data[i] = []
 
 	for i in range(total_num_samp):
-		#if y[i] == pred[i]:
-		l = y[i]
-		data[labels[l]].append(x[i])
-		fm_data[labels[l]].append(fm[i])
+		if y[i] == pred[i]:
+			l = y[i]
+			data[labels[l]].append(x[i])
+			fm_data[labels[l]].append(fm[i])
 
 	num_samp = np.zeros(num_classes)
 
@@ -142,50 +143,6 @@ def get_feature_map_rankings_cnn(x, y, pred, fm, w, b, g, label_set, features):
 						if d[f] > results[lab].loc[f, "Max Score"]:
 							results[lab].loc[f, "Max Score"] = d[f]
 
-
-		'''
-		for j in range(0, num_maps):
-			#Order the feature map's maximums
-			loc_list = max_list[i][j].argsort()[::-1]
-			#Store kernel weights
-			#For the top X maximums...i
-			for k in range(0, len(loc_list)):
-				#Find the row and column location and isolate reference window
-				loc = loc_list[k]
-				max_count = max_list[i][j][loc]
-				if max_count == 0:
-					break
-				if max_count >= int(round(num_samp[i] * theta2)):
-					row = int(loc) // int(fm_cols)
-					col = loc % fm_cols
-					ref_window = ref[row:row + w_row, col:col + w_col]
-					count = np.zeros((w_row,w_col))
-
-					#Calculate the proportion of the contribution of each pixel to the convolution with the absolute value of weights
-					for l in range(0,int(num_samp[i])):
-						window =data[lab][l, row:row + w_row, col:col + w_col]
-						abs_v = (abs(w[:,:,j]) * abs(window)).sum() + 0.00001
-						v = (w[:,:,j] * window)
-						for m in range(0, v.shape[0]):
-							for n in range(0, v.shape[1]):
-								count[m,n] += v[m,n] / abs_v
-
-					#Divide by number of samples
-					count = count/num_samp[i]
-		#Print out features with a high enough value
-		for m in range(0, w_row):
-			for n in range(0, w_col):
-				if count[m,n] > 0:
-					if ref_window[m,n] in results[lab].index:
-						if count[m,n] > results[lab].loc[ref_window[m,n], "Max Score"]:
-							results[lab].loc[ref_window[m,n], "Max Score"] = count[m,n]
-							results[lab].loc[ref_window[m,n], "Cumulative Score"] += count[m,n]
-						else:
-							results[lab].loc[ref_window[m,n], "Max Score"] = count[m,n]
-							results[lab].loc[ref_window[m,n], "Cumulative Score"] = count[m,n]
-
-
-	'''
 	diff = {}
 	for i in labels:
 		diff[i] = df.set_index("OTU")
@@ -221,41 +178,3 @@ def get_feature_rankings_mlpnn(weight_list):
 		cummulative = np.matmul(cummulative, weight_list[w])
 	return cummulative
 
-def get_feature_map_rankings_cnn_2(kernels, weight_list, g, features):
-	ref = g.get_ref()
-
-	k_height = int(kernels.shape[0])
-	k_width = int(kernels.shape[1])
-	num_kernels = kernels.shape[-1]
-	num_layers = len(weight_list)
-
-	cummulative = weight_list[0]
-
-	for w in range(1, num_layers):
-		cummulative = np.matmul(cummulative, weight_list[w])
-
-	nodes_per_kernel = cummulative.shape[0]/num_kernels
-	num_class = cummulative.shape[1]
-	out_df = pd.DataFrame(index=features, columns=[str(x) for x in range(0, num_class)])
-	out_df = out_df.fillna(0.0)
-	for c in range(0,num_class):
-		for pos in range(0,cummulative.shape[0]):
-			k = int(pos / nodes_per_kernel)
-			offset = int(pos % nodes_per_kernel)
-			fm_rows = ref.shape[0] - k_height + 1
-			fm_cols = ref.shape[1] - k_width + 1
-
-			col_off = int(offset % fm_cols)
-			row_off = int(offset / fm_cols)
-
-
-			window = ref[row_off:row_off+k_height,col_off:col_off+k_width]
-			temp_cummulative = np.squeeze(cummulative[pos,c] * kernels[:,:,:,k])
-			for x in range(0,window.shape[0]):
-				for y in range(0,window.shape[1]):
-					feat = window[x,y]
-					if feat != 0 and feat != '0':
-						score = temp_cummulative[x,y]
-						out_df.loc[feat][str(c)] += score
-
-	return out_df.values

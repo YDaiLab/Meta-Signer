@@ -76,10 +76,7 @@ GridCV = 5
 Train = True
 LearningRate = 0.001
 BatchSize = 1024
-ValidationModels = 10
 Patience = 40
-
-
 
 #####################################################################################
 # PopPhy-CNN models
@@ -96,5 +93,5 @@ Patience = 40
 Train = True
 LearningRate = 0.001
 BatchSize = 1024
-ValidationModels = 10
 Patience = 40
+
