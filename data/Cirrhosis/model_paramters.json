@@ -1,5 +1,5 @@
 {
-    "CNN": {
+    "PopPhy": {
         "Dropout_Rate": 0.25,
         "Kernel_Size": 7,
         "L2_Lambda": 0.001,
