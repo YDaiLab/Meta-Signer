@@ -1,6 +1,6 @@
 # Meta-Signer
 
-Meta-Signer is a machine learning aggregated approach for feature evaluation of metagenomic datasets. Random forest, support vector machines, LASSO, multi-layer neural networks, and our novel PopPhy-CNN machine learning frameworks are used to train and evaluate features in a cross-validated fashion. Features are then aggregated across models and partitions into a single ranked list of the top *k* features.
+Meta-Signer is a machine learning aggregated approach for feature evaluation of metagenomic datasets. Random forest, support vector machines, logistic regression, and multi-layer neural networks. Features are then aggregated across models and partitions into a single ranked list of the top *k* features.
 
 ## Execution:
 
@@ -23,6 +23,18 @@ cd Meta-Signer
 conda env create -f meta-signer.yml
 source activate meta-signer
 ``` 
+
+### Meta-Signer's Required Input
+
+To use Meta-Signer on a dataset, first create a directory in the _data_ folder. This directory requires two files:
+
+|File|Description |
+| --- | --- |
+|abundance.tsv|A **tab separated** file where each row is a feature and each column is a sample. The first column should be the feature ID. There should be no header of sample IDs |
+|labels.txt|A text file where each row is the sample class value. Rows should be in the same order as columns found in _abundance.tsv_ |
+
+Examples can be found in the _PRISM_ and _PRISM_3_ datasets provided.
+
 ### Set configuration settings
 
 Meta-Signer offers a flexible framework which can be customized in the configuration file. The configuration file offers the following parameters:
