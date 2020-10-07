@@ -25,7 +25,7 @@ source activate meta-signer
 ``` 
 ### Set configuration settings
 
-Meta-Signer offers a flexible framework which can be customized in the configuration file.
+Meta-Signer offers a flexible framework which can be customized in the configuration file. The configuration file offers the following parameters:
 
 |Evaluation| |
 | --- | --- |
@@ -65,8 +65,46 @@ Meta-Signer offers a flexible framework which can be customized in the configura
 
 ### Run the Meta-Signer pipeline:
 
+Once the configuration is set to desired values, generate the aggregated feature list using:
+
 ```bash
 cd src
-python meta-signer.py
+python generate_feature_ranking.py
 ``` 
 
+Upon completion, Meta-Signer will generate a directory in the results folder with the same name as set to the _DataSet_ flag in the configuration file. This directory will contain important files of interest including:
+
+|File|Description |
+| --- | --- |
+|training_performance.html|A portable HTML file showing cross-validated evaluation of ML methods|
+|feature_evaluation/ensemble_rank_table.csv|ranked lists of features for each method and each cross-validated run|
+|feature_evaluation/aggregated_rank_table.csv|Aggregated ranked list of features|
+|prediction_evaluation/results.tsv|Results table for cross-validated evaluation of ML methods|
+
+Once the features have been aggregated into a single ranked list, the user can decide on how many features to use for the final training of ML models. Meta-Signer can generate these final trained ML models using a user specified number of features using:
+
+```bash
+cd src
+python generate_models.py <DataSet> <k>
+``` 
+
+Where _DataSet_ is the directory in the results folder to use and _k_ is the final number of features to use during training. Additionally, the models can be trained on an external datset using:
+
+```bash
+cd src
+python generate_models.py <DataSet> <k> -e <ExternalDataSet>
+``` 
+
+Where _ExternalDataSet_ is a directory in the data folder with _abundance.tsv_ and _labels.txt_ files. 
+
+Upon completion, Meta-Signer will create a directory within the dataset's results directory that will contain:
+
+|File|Description |
+| --- | --- |
+|feature_ranking.html|A portable HTML file the ranked features up to the specified value of _k_|
+|rf_model.pkl|The trained random forest model in pickle format|
+|logistic_regression_model.pkl|The trained logistic regression model in pickle format|
+|svm_model.pkl|The trained SVM model in pickle format|
+|mlpnn.h5|The trained neural network model in H5 format|
+|training_results.tsv|The performance of trained models on the training set|
+|external_results.tsv|The performance of trained models on the external test set|
