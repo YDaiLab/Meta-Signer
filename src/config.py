@@ -9,14 +9,16 @@
 # Normalization		Normalization type [Standard or MinMax]
 # Dataset		Dataset located in ../data
 # FilterThresh		Filter OTUs based on porportion found in samples [float]
-# TopK			Number of features in final list [integer]
+# MaxK			Max number of features in final list [integer]
 
-NumberTestSplits = 10	
-NumberRuns = 1	
+NumberTestSplits = 10
+NumberRuns = 10
 Normalization = Standard
-DataSet = Cirrhosis
-FilterThresh = 0.1
-TopK = 20
+DataSet = PRISM_3
+FilterThreshCount = 0.1
+FilterThreshMean = 0.001
+MaxK = 100
+AggregateMethod = GA
 
 #####################################################################################
 # Random Forest settings
@@ -40,24 +42,26 @@ ValidationModels = 5
 [SVM]
 
 # Train			Turn SVM models on or off [boolean]
+# MaxIterations		Max iterations for SVM training [integer]
 # GridCV		Number of partitions (k) to use in cross-validation for parameter selection [integer]
 
 Train = True
+MaxIterations = 10000
 GridCV = 5
 
 
 #####################################################################################
-# LASSO settings
+# Logistic Regression settings
 #####################################################################################
 
-[LASSO]
+[Logistic Regression]
 
-# Train			Turn LASSO models on or off [boolean]
-# NumberIterations	Max iterations for LASSO training [integer]
+# Train			Turn Logistic Regression models on or off [boolean]
+# MaxIterations		Max iterations for Logistic Regression training [integer]
 # GridCV		Number of partitions (k) to use in cross-validation for parameter selection [integer]
 
 Train = True
-NumberIterations = 10000
+MaxIterations = 10000
 GridCV = 5
 
 
@@ -78,20 +82,5 @@ LearningRate = 0.001
 BatchSize = 1024
 Patience = 40
 
-#####################################################################################
-# PopPhy-CNN models
-#####################################################################################
 
-[PopPhy]
-
-# Train			Turn PopPhy-CNN models on or off [boolean]
-# LearningRate		Learning rate for PopPhy-CNN models [float]
-# BatchSize		Batch size for PopPhy-CNN models [integer]
-# ValidationModels	Number of partitions (k) to use in cross-validation for network tuning [integer]
-# Patience		Patience to use for early stopping for parameter tuning [integer]
-
-Train = True
-LearningRate = 0.001
-BatchSize = 1024
-Patience = 40
 

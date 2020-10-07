@@ -17,33 +17,22 @@ path <- myArgs[1]
 k <- as.numeric(myArgs[2])
 method <- myArgs[3]
 model <- myArgs[4]
-metric <- myArgs[5]
+method <- myArgs[5]
 
-input <- paste(path, "/feature_evaluation/", model, "_", method, "_rank_table.csv", sep="")
-output <- paste(path, "/feature_evaluation/", model, "_", method, "_rank_table_aggregated.csv", sep="")
+input <- paste(path, "/feature_evaluation/ensemble_rank_table.csv", sep="")
+output <- paste(path, "/feature_evaluation/aggregated_rank_table.csv", sep="")
 
-scores <- paste(path, "/prediction_evaluation/results_",metric,".tsv", sep="")
+scores <- paste(path, "/prediction_evaluation/results_AUC.tsv", sep="")
 
 metric_scores <- as.data.frame(read.table(scores, sep="\t", header=T, colClasses="character", row.names=1))
 
-if (method == "raw"){
-	rf_scores <- as.vector(metric_scores["RF",])
-	svm_scores <- as.vector(metric_scores["SVM",])
-	lasso_scores <- as.vector(metric_scores["LASSO",])
-	mlpnn_scores <- as.vector(metric_scores["MLPNN",])
-	w <- c(rf_scores, svm_scores, lasso_scores, mlpnn_scores)
-}
+rf_scores <- as.vector(metric_scores["RF",])
+svm_scores <- as.vector(metric_scores["SVM",])
+lasso_scores <- as.vector(metric_scores["Logistic Regression",])
+mlpnn_scores <- as.vector(metric_scores["MLPNN",])
+w <- c(rf_scores, svm_scores, lasso_scores, mlpnn_scores)
 
 
-if (method == "tree"){
-	rf_scores <- as.vector(metric_scores["RF_TREE",])
-	svm_scores <- as.vector(metric_scores["SVM_TREE",])
-	lasso_scores <- as.vector(metric_scores["LASSO_TREE",])
-	mlpnn_scores <- as.vector(metric_scores["MLPNN_TREE",])
-	cnn_scores <- as.vector(metric_scores["PopPhy",])
-	w <- c(rf_scores, svm_scores, lasso_scores, mlpnn_scores, cnn_scores)
-		
-}
 w <- as.numeric(w)
 w <- w[!is.na(w)]
 w[w<0] <- 0
@@ -51,11 +40,12 @@ w[w<0] <- 0
 
 
 mat <- read.table(input, sep=",", header=T, colClasses="character", row.names=1)
+print(t(as.matrix(mat)))
 
 if ((nrow(t(as.matrix(mat)))) == 1){
-	ranking <- t(as.matrix(mat))[1:k]
+    ranking <- t(as.matrix(mat))[1:k]
 }else
 {
-	ranking <- RankAggreg(t(as.matrix(mat)), k, importance=w, method="CE", distance="Spearman", verbose=F)$top.list
+    ranking <- RankAggreg(t(as.matrix(mat)), k, importance=w, method=method, distance="Spearman", verbose=F)$top.list
 }
 write.table(ranking, output, sep=",", row.names=F, col.names=F, quote=F)
