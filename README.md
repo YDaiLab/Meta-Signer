@@ -27,7 +27,41 @@ source activate meta-signer
 
 Meta-Signer offers a flexible framework which can be customized in the configuration file.
 
-**If you want to run Meta-Signer without deep learning models and without Tensorflow, make sure to set the 'Train' parameter to False in config.py.**
+|Evaluation| |
+| --- | --- |
+|NumberTestSplits|Number of partitions for cross-validation|
+|NumberRuns|Number of indepenendant iterations of cross-validation to run |
+|Normalization|Normalization method applied to data (Standard or MinMax) |
+|DataSet|Directory in _data_ directory to load data from |
+|FilterThreshCount|Remove features who are present in fewer than the specified fraction of samples |
+|FilterThreshMean|Remove features with a mean value less than the specified value |
+|MaxK|The maximum number of features to generate in the rank aggregation |
+|AggregateMethod|The method used for rank aggregation (GA or CE) |
+
+|RF| |
+| --- | --- |
+|Train|Use Random Forest for feature ranking and aggregation|
+|NumberTrees|Number of decision trees per forest|
+|ValidationModels|Number of partitions for internal cross-validation for tuning|
+
+|SVM| |
+| --- | --- |
+|Train|Use SVM for feature ranking and aggregation|
+|MaxIterations|Maximum number of iterations to train|
+|GridCV|Number of partitions for internal cross-validation for tuning|
+
+|Logistic Regression| |
+| --- | --- |
+|Train|Use logistic regression for feature ranking and aggregation|
+|MaxIterations|Maximum number of iterations to train|
+|GridCV|Number of partitions for internal cross-validation for tuning|
+
+|MLPNN| |
+| --- | --- |
+|Train|Use MLPNN for feature ranking and aggregation|
+|LearningRate|Learning rate for neural network models|
+|BatchSize|Size of each batch during neural network training|
+|Patience|Number of epochs to stop training after no improvement|
 
 ### Run the Meta-Signer pipeline:
 
