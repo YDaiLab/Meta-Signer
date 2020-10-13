@@ -1,3 +1,4 @@
+![alt text](https://zenodo.org/badge/DOI/10.5281/zenodo.4077403.svg)
 # Meta-Signer
 
 Meta-Signer is a machine learning aggregated approach for feature evaluation of metagenomic datasets. Random forest, support vector machines, logistic regression, and multi-layer neural networks. Features are then aggregated across models and partitions into a single ranked list of the top *k* features.
