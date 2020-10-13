@@ -140,7 +140,7 @@ if __name__ == "__main__":
     for feat in features_subset.reshape(-1):
         rank_dict[feat] = {}
         count = np.count_nonzero(ensemble_rank_list.head(int(num_feat)).values == feat)
-        rank_dict[feat]["percent"] = str(np.round(float(count) / float(len(ensemble_rank_list.columns)),2))
+        rank_dict[feat]["percent"] = str(np.round(float(count) / float(len(ensemble_rank_list.columns)) * 100 ,1))
         rank_dict[feat]["PERMANOVA_p"] = '{:.3e}'.format(permanova.loc[feat].values[0])
         rank_dict[feat]["PERMANOVA_rank"] = str(permanova.sort_values(by="Adj p-value", ascending=True).index.get_loc(feat) + 1)
         enriched_lab="-"
