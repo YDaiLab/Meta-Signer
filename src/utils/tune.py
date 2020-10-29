@@ -45,8 +45,7 @@ def tune_mlpnn(train, test, config, train_weights=[]):
 
             es_cb = tf.keras.callbacks.EarlyStopping('val_loss', patience=patience, restore_best_weights=True)
             model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate), loss='categorical_crossentropy')
-            print(train_x)
-            print(train_y)
+
             model.fit(train_x, train_y, batch_size=batch_size, verbose=1, epochs=1000, callbacks=[es_cb], validation_split=0.1)
             model.fit(train_x, train_y, batch_size=batch_size, verbose=1, epochs=10)
 
